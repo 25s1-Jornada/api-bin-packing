@@ -39,15 +39,13 @@ RUN rm -rf ./test
 #RUN find ./src -mindepth 1 -maxdepth 1 -type d ! -name 'irregular' -exec rm -rf {} +
 
 #Compila
-RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DPACKINGSOLVER_BUILD_TEST=OFF \
-    && cmake --build build --config Release --parallel && cmake --install build --config Release --prefix install
+RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DPACKINGSOLVER_BUILD_TEST=OFF
+RUN cmake --build  ./build/src/irregular && cmake --install ./build/src/irregular --config Release --prefix install
 
-#RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DPACKINGSOLVER_BUILD_TEST=OFF
-#RUN make ./build/src/irregular
-
-#RUN cmake -S ./src/irregular -B build
+#Exportar o path
+RUN ln -s ./install/bin/packingsolver_irregular /bin/packingsolver_irregular
+ENV PATH="/app/install/bin:${PATH}"
 
 # Define o comando padrão
 #CMD ["./packingsolver/bin/packingsolver"]
-
 CMD ["tail", "-f", "/dev/null"]
