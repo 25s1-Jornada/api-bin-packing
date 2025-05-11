@@ -1,0 +1,17 @@
+
+services:
+  python-app:
+    build:
+      context: ./
+    volumes:
+      - ./data:/data           # Compartilha a pasta de dados
+      - /var/run/docker.sock:/var/run/docker.sock  # Acesso ao Docker (opcional)
+    depends_on:
+      - packingsolver
+
+  packingsolver:
+    build: 
+      context: ./ 
+      dockerfile: packingsolver.Dockerfile 
+    volumes:
+      - ./data:/data           # Compartilha a mesma pasta de dados
