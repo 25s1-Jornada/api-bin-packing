@@ -181,7 +181,7 @@ def plot_solution(
         fig.show()
 
     return fig
- 
+
 
 if __name__ == "__main__":
     notify = inotify.adapters.Inotify()
@@ -198,5 +198,5 @@ if __name__ == "__main__":
 
         if filename == "output.json" and type_names[0] == 'IN_CLOSE_WRITE':
             print("ploting solution")
-            plot_solution("/data/output.json", save_as="output.png")
+            plot_solution("/data/output.json", save_as="/data/output.png")
 

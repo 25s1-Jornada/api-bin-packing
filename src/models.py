@@ -1,6 +1,6 @@
 import pickle
 from typing import List, Tuple
-from sqlalchemy import ForeignKey, Integer, LargeBinary, String
+from sqlalchemy import ForeignKey, Integer, LargeBinary, String, JSON
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from packing_layer import Packer
@@ -38,19 +38,19 @@ class Shirt(Base):
     type: Mapped[str] = mapped_column(String(50))
     size: Mapped[str] = mapped_column(String(3)) # pp p m g gg
 
-    shirt_rects: Mapped[List["ShirtRects"]] = relationship(
-        "ShirtRects", back_populates="shirt", cascade="all, delete-orphan"
+    shirt_poligon: Mapped[List["ShirtPoligon"]] = relationship(
+        "ShirtPoligon", back_populates="shirt", cascade="all, delete-orphan"
     )
 
-class ShirtRects(Base):
-    __tablename__ = "shirt_rects"
+class ShirtPoligon(Base):
+    __tablename__ = "shirt_poligon"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    width: Mapped[int] = mapped_column(Integer)
-    height: Mapped[int] = mapped_column(Integer)
+    vertices: Mapped[JSON] = mapped_column(JSON(5000), nullable=True)
+    type: Mapped[str] = mapped_column(String(50))
     shirt_id: Mapped[str] = mapped_column(ForeignKey("shirt.id"))
 
-    shirt: Mapped["Shirt"] = relationship("Shirt", back_populates="shirt_rects")
+    shirt: Mapped["Shirt"] = relationship("Shirt", back_populates="shirt_poligon")
 
 class PackerModel(Base):
     __tablename__ = 'packers'
