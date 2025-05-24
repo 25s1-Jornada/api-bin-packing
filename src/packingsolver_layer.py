@@ -1,3 +1,5 @@
+from ast import Tuple
+import uuid
 import docker
 from docker.errors import DockerException
 import json
@@ -6,11 +8,34 @@ import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
 import plotly.subplots as sp
-from typing import Union, Optional
+from typing import Dict, List, Union, Optional
 import os
 import inotify.adapters
 
+from models import GartmentTable, ShirtPoligon
+
 client = docker.from_env()
+                                                 #[int, ShirtPoligon]       
+def execute_action(clientId, vertices_list: List[Tuple], table: GartmentTable):
+    # Cria o JSON de entrada
+    dirname = f"/data/{clientId}"
+    input_json_path = create_input_json(clientId, vertices_list, table, dirname=dirname)
+    
+    # Executa o packingsolver
+    output_json_path = f"{dirname}/output.json"
+    resume = run_packingsolver(input_json_path, output_json_path)
+    
+    # Lê o JSON de saída
+    with open(output_json_path, 'r') as f:
+        data = json.load(f)
+    
+    # Extrai os vértices
+    simplified_items = extract_vertices(data)
+    
+    # Plota a solução
+    plot_solution(data, save_as=f"/data/{clientId}/output.png")
+    
+    return simplified_items
 
 def run_packingsolver(input_path: str, output_path: str):
     try:
@@ -20,7 +45,7 @@ def run_packingsolver(input_path: str, output_path: str):
         # Executa o comando dentro do container rodando
         # To rodando detach pq por algum motivo o packingsolver não finaliza a execução
         exec_result = container.exec_run(
-            cmd=f"packingsolver_irregular -i {input_path} -c {output_path} --time-limit 10",
+            cmd=f"packingsolver_irregular -i {input_path} -c {output_path} --time-limit 120 -e",
             #detach=True
         )
         
@@ -28,6 +53,102 @@ def run_packingsolver(input_path: str, output_path: str):
         
     except DockerException as e:
         print("Erro:", e)
+                                                 #[int, ShirtPoligon]       
+def create_input_json(clientId, vertices_list: List[Tuple], table: GartmentTable, dirname: str = "/data/") -> str:
+    generated_json = generate_json(vertices_list, table.width, table.height)
+    
+    if not os.path.exists(dirname):
+        os.mkdir(dirname)
+    
+    with open(f"{dirname}/input.json", "w") as f:
+        json.dump(generated_json, f)
+    print("Input JSON created:", generated_json)
+    
+    return f"{dirname}/input.json"
+    
+                                  #[int, ShirtPoligon]       
+def generate_json(vertices_list: List[Tuple],
+                  width: float,
+                  height: float,
+#                  copies_per_item: Optional[int] = 1,
+                  item_copies: Optional[int] = 3) -> Dict:
+
+    non_sleeve_items = []
+    sleeve_items = []
+
+    
+    shirt_id = uuid.uuid4()
+        ## aqui eu preciso achar um jeito de melhorar esses tipos para verificar as quantidades
+    for vertices in vertices_list:
+        
+        copies = vertices[0]
+        
+        for vert in vertices[1]:
+            item = {
+                "copies": copies,
+                "allow_mirroring": True,
+                "shapes": [
+                    {
+                        "id": str(shirt_id) + str(vert.type),
+                        "type": "polygon",
+                        "copies": 1,
+                        "vertices": vert.vertices,
+                        "holes": []
+                    }
+                ]
+            }
+            if vert.type.lower() == "manga":
+                sleeve_items.append(item)
+            else:
+                non_sleeve_items.append(item)
+                
+    item_types = non_sleeve_items + sleeve_items
+
+    result = {
+        "objective": "open-dimension-x",
+        "parameters": {
+            "item_bin_minimum_spacing": 0.2,
+            "item_item_minimum_spacing": 0.4
+        },
+        "bin_types": [
+            {
+                "type": "rectangle",
+                "width": width,
+                "height": height
+            }
+        ],
+        "allow_mirroring": True,
+        "item_types": item_types
+    }
+
+    return result  
+
+
+def extract_vertices(data):
+    simplified_items = []
+
+    for bin in data.get("bins", []):
+        for item in bin.get("items", []):
+            shape = item["item_shapes"][0]["shape"]
+            vertices = []
+
+            # Para evitar repetição e garantir ordem, coletamos só o ponto inicial de cada segmento
+            for segment in shape:
+                point = (segment["xs"], segment["ys"])
+                if point not in vertices:
+                    vertices.append(point)
+            # O último vértice pode ser o final do último segmento, se necessário
+            last_segment = shape[-1]
+            last_point = (last_segment["xe"], last_segment["ye"])
+            if last_point not in vertices:
+                vertices.append(last_point)
+
+            simplified_items.append({
+                "id": item["id"],
+                "vertices": vertices
+            })
+
+    return simplified_items
 
 def _shape_path(path_x, path_y, shape, is_hole=False):
     for element in (shape if not is_hole else reversed(shape)):
@@ -183,20 +304,19 @@ def plot_solution(
     return fig
 
 
-if __name__ == "__main__":
-    notify = inotify.adapters.Inotify()
-    notify.add_watch("/data/")
+# if __name__ == "__main__":
+#     notify = inotify.adapters.Inotify()
+#     notify.add_watch("/data/")
     
-    run_packingsolver("/data/input.json", "/data/output.json")
+#     run_packingsolver("/data/input.json", "/data/output.json")
 
     
-    for event in notify.event_gen(yield_nones=False):
-        (_, type_names, path, filename) = event
+#     for event in notify.event_gen(yield_nones=False):
+#         (_, type_names, path, filename) = event
         
-        print("PATH=[{}] FILENAME=[{}] EVENT_TYPES={}".format(
-              path, filename, type_names))
+#         print("PATH=[{}] FILENAME=[{}] EVENT_TYPES={}".format(
+#               path, filename, type_names))
 
-        if filename == "output.json" and type_names[0] == 'IN_CLOSE_WRITE':
-            print("ploting solution")
-            plot_solution("/data/output.json", save_as="/data/output.png")
-
+#         if filename == "output.json" and type_names[0] == 'IN_CLOSE_WRITE':
+#             print("ploting solution")
+#             plot_solution("/data/output.json", save_as="/data/output.png")

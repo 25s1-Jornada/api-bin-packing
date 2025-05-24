@@ -12,7 +12,7 @@ def populate_data():
         # Define the data for each shirt
         shirts_data = [
             {
-                "type": "T-SHIRT",
+                "type": "SHIRT",
                 "size": "P",
                 "polygons": [
                 {

@@ -12,11 +12,13 @@ from sqlalchemy.sql.functions import random
 from starlette.responses import FileResponse, StreamingResponse
 
 from Utils import Utils
-from body_dto import newTable, addShirt, ShirtCreate
-from models import Base, GartmentTable, Shirt, ShirtRects
+from body_dto import addManyShirt, newTable, addShirt, ShirtCreate
+from models import Base, GartmentTable, Shirt
 from packing_layer import Packer
+from packingsolver_layer import execute_action
+from populate import populate_data
 from services import GartmentTableService, ShirtService, ShirtRectsService, PackerService
-from temp_content import get_rects, plot_bin_packing
+#from temp_content import get_rects, plot_bin_packing
 
 # iniciar DB
 engine = create_engine("sqlite:///database.db", echo=True)
@@ -51,42 +53,70 @@ async def get_table(table_id: int):
 
     return Utils.mount_table_return(table)
 
-@app.post('/table/{table_id}/add')
-async def add_rect(table_id: int, add_shirt: addShirt):
+# @app.post('/table/{table_id}/add')
+# async def add_rect(table_id: int, add_shirt: addShirt):
 
+#     tableService = GartmentTableService(engine)
+#     table = tableService.get_table(table_id)
+
+#     shirtService = ShirtService(engine)
+#     shirt = shirtService.get_by_size_type(add_shirt.size, add_shirt.type)
+
+#     shirtRectsService = ShirtRectsService(engine)
+#     shirtRects = shirtRectsService.get_by_shirtId(shirt.id)
+
+#     if table is not None and shirt is not None and shirtRects is not None:
+#         rectsList = shirtRectsService.transform_into_rects(shirtRects)
+
+
+#         pack = Packer((table.width, table.height))
+
+#         packerService = PackerService(engine)
+#         if table.bin_maxrects is not None:
+#             pack = packerService.get_packer(table)
+
+#         pack.add_many(rectsList)
+#         pack.pack()
+
+#         tableService.save(table, pack)
+
+#         if packerService.loaded_packer is not None:
+#             packerService.save(pack)
+#         else:
+#             packerService.new(pack, table.id)
+
+
+#         return Utils.mount_table_return(table)
+
+#     return json.dumps({"error": "Error during the addition"})
+
+@app.post('/table/{table_id}/addMany')
+async def add_many(table_id: int, add_shirt: addManyShirt):
+    
     tableService = GartmentTableService(engine)
     table = tableService.get_table(table_id)
 
     shirtService = ShirtService(engine)
-    shirt = shirtService.get_by_size_type(add_shirt.size, add_shirt.type)
+    shirtP = shirtService.get_by_size_type("P", add_shirt.type)
+    shirtM = shirtService.get_by_size_type("M", add_shirt.type)
+    shirtG = shirtService.get_by_size_type("G", add_shirt.type)
 
     shirtRectsService = ShirtRectsService(engine)
-    shirtRects = shirtRectsService.get_by_shirtId(shirt.id)
+    shirtRectsP = shirtRectsService.get_by_shirtId(shirtP.id)
+    shirtRectsM = shirtRectsService.get_by_shirtId(shirtM.id)
+    shirtRectsG = shirtRectsService.get_by_shirtId(shirtG.id)
 
-    if table is not None and shirt is not None and shirtRects is not None:
-        rectsList = shirtRectsService.transform_into_rects(shirtRects)
-
-
-        pack = Packer((table.width, table.height))
-
-        packerService = PackerService(engine)
-        if table.bin_maxrects is not None:
-            pack = packerService.get_packer(table)
-
-        pack.add_many(rectsList)
-        pack.pack()
-
-        tableService.save(table, pack)
-
-        if packerService.loaded_packer is not None:
-            packerService.save(pack)
-        else:
-            packerService.new(pack, table.id)
-
-
-        return Utils.mount_table_return(table)
+    shirtList = [
+        (add_shirt.p, shirtRectsP),
+        (add_shirt.m, shirtRectsM),
+        (add_shirt.g, shirtRectsG),
+    ]
+    
+    if table is not None and shirtP is not None and shirtM is not None and shirtG is not None:
+        return json.dumps(execute_action(table=table, vertices_list=shirtList, clientId=table_id))
 
     return json.dumps({"error": "Error during the addition"})
+
 
 @app.post('/table/{table_id}/remove/{shirt_id}')
 async def remove_shirt(table_id: int, shirt_id: int):
@@ -101,67 +131,68 @@ async def remove_shirt(table_id: int, shirt_id: int):
 
 
 
-@app.post("/shirts/", response_model=ShirtCreate)
-def create_shirt(shirt: ShirtCreate):
+# @app.post("/shirts/", response_model=ShirtCreate)
+# def create_shirt(shirt: ShirtCreate):
 
-    with Session(engine) as session:
-        db_shirt = Shirt(type=shirt.type, size=shirt.size)
-        session.add(db_shirt)
-        session.commit()
-        session.refresh(db_shirt)
+#     with Session(engine) as session:
+#         db_shirt = Shirt(type=shirt.type, size=shirt.size)
+#         session.add(db_shirt)
+#         session.commit()
+#         session.refresh(db_shirt)
 
-        for rect in shirt.shirt_rects:
-            db_rect = ShirtRects(width=rect.width, height=rect.height, shirt_id=db_shirt.id)
-            session.add(db_rect)
-        session.commit()
+#         for rect in shirt.shirt_rects:
+#             db_rect = ShirtRects(width=rect.width, height=rect.height, shirt_id=db_shirt.id)
+#             session.add(db_rect)
+#         session.commit()
 
-    return db_shirt
+#     return db_shirt
 
 
 
-@app.delete("/shirts/{shirt_id}")
-def delete_shirt(shirt_id: int):
-    with Session(engine) as session:
-        db_shirt = session.query(Shirt).filter(Shirt.id == shirt_id).first()
-        if db_shirt is None:
-            raise HTTPException(status_code=404, detail="Shirt not found")
-        session.delete(db_shirt)
-        session.commit()
+# @app.delete("/shirts/{shirt_id}")
+# def delete_shirt(shirt_id: int):
+#     with Session(engine) as session:
+#         db_shirt = session.query(Shirt).filter(Shirt.id == shirt_id).first()
+#         if db_shirt is None:
+#             raise HTTPException(status_code=404, detail="Shirt not found")
+#         session.delete(db_shirt)
+#         session.commit()
 
-    return {"message": "Shirt deleted successfully"}
+#     return {"message": "Shirt deleted successfully"}
 
 ## TEMP AREA
-@app.get('/pack')
-def pack_path():
-    pack = Packer((800, 500))
-    pack.add_many(get_rects())
-    pack.pack()
+# @app.get('/pack')
+# def pack_path():
+#     pack = Packer((800, 500))
+#     pack.add_many(get_rects())
+#     pack.pack()
 
-    return {
-        "maxreacts": pack._packer_max.rect_list(),
-        "guilhotine":pack._packer_gui.rect_list(),
-        "skyline":pack._packer_sky.rect_list()
-    }
+#     return {
+#         "maxreacts": pack._packer_max.rect_list(),
+#         "guilhotine":pack._packer_gui.rect_list(),
+#         "skyline":pack._packer_sky.rect_list()
+#     }
 
-@app.get(
-    '/packImage',
-    )
-def pack_path():
+# @app.get(
+#     '/packImage',
+#     )
+# def pack_path():
 
-    pack = Packer((800, 500))
-    pack.add_many(get_rects())
-    pack.pack()
+#     pack = Packer((800, 500))
+#     pack.add_many(get_rects())
+#     pack.pack()
 
-    plt = plot_bin_packing(pack._packer_max.rect_list(), pack.bin)
+#     plt = plot_bin_packing(pack._packer_max.rect_list(), pack.bin)
 
-    # Tranformar o grafico em imagem
-    image_data = BytesIO()
-    plt.savefig(image_data, format='png')
-    image_data.seek(0)
-    plt.close()
+#     # Tranformar o grafico em imagem
+#     image_data = BytesIO()
+#     plt.savefig(image_data, format='png')
+#     image_data.seek(0)
+#     plt.close()
 
 
-    return StreamingResponse(image_data, media_type="image/png")
+#     return StreamingResponse(image_data, media_type="image/png")
 
 if __name__ == '__main__':
-    uvicorn.run(app, host='127.0.0.1', port=8000)
+    populate_data()
+    uvicorn.run(app, host='0.0.0.0', port=8000)

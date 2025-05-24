@@ -18,6 +18,9 @@ class GartmentTable(Base):
     bin_skyline: Mapped[str] = mapped_column(String(5000), nullable=True)
     bin_guillotine: Mapped[str] = mapped_column(String(5000), nullable=True)
 
+    input: Mapped[JSON] = mapped_column(JSON(50000), nullable=True)
+    output: Mapped[JSON] = mapped_column(JSON(50000), nullable=True)
+
     packers: Mapped[List["PackerModel"]] = relationship(
         "PackerModel", back_populates="table", cascade="all, delete-orphan"
     )
