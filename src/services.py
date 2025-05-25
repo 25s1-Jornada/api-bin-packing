@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql.util import tables_from_leftmost
 
 from body_dto import newTable
-from models import GartmentTable, Shirt, ShirtRects, PackerModel
+from models import GartmentTable, Shirt, PackerModel, ShirtPoligon
 from packing_layer import Packer
 
 
@@ -139,20 +139,20 @@ class ShirtRectsService:
     def new(self):
         raise NotImplementedError()
 
-    def get_by_shirtId(self, shirt_id: int) -> List[ShirtRects]:
-        shirtRects: List[ShirtRects]
+    def get_by_shirtId(self, shirt_id: int) -> List[ShirtPoligon]:
+        shirtPoligon: List[ShirtPoligon] # type: ignore
 
         with Session(self.engine) as session:
-            stmt = select(ShirtRects).where(ShirtRects.shirt_id == shirt_id)
-            shirtRects = session.execute(stmt).scalars().all()
+            stmt = select(ShirtPoligon).where(ShirtPoligon.shirt_id == shirt_id)
+            shirtPoligon = session.execute(stmt).scalars().all()
 
-            return shirtRects
+            return shirtPoligon
 
-    def transform_into_rects(self, shirtRects: List[ShirtRects], random_id: int = uuid.uuid4().int >> 32) -> List[Tuple[int, int, str]]:
-        result = []
-        for rect in shirtRects:
-            unique_id = self.generate_uuid(rect.id, rect.shirt_id, random_id)
-            result.append((rect.width, rect.height, unique_id))
+    # def transform_into_rects(self, ShirtPoligon: List[ShirtPoligon], random_id: int = uuid.uuid4().int >> 32) -> List[Tuple[int, int, str]]:
+    #     result = []
+    #     for rect in ShirtPoligon:
+    #         unique_id = self.generate_uuid(rect.id, rect.shirt_id, random_id)
+    #         result.append((rect.width, rect.height, unique_id))
 
         return result
 

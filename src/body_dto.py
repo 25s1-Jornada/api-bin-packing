@@ -19,3 +19,9 @@ class ShirtCreate(BaseModel):
     type: str
     size: str
     shirt_rects: List[ShirtRectCreate] = []
+    
+class addManyShirt(BaseModel):
+    p: int
+    m: int
+    g: int
+    type: str

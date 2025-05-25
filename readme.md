@@ -38,3 +38,12 @@ The last step it's just run the main
     python main.py
 
 ```
+
+
+Run the container
+
+```bash
+
+    docker-compose up --build
+
+```
