@@ -27,7 +27,7 @@ jobs:
 
       - name: Run Container and Execute Tests
         run: |
-          docker run --rm -v ${{ github.workspace }}/data:/app/data binpacking python3 src/tests.py
+          docker run --rm -v ${{ github.workspace }}/data:/app/data binpacking python3 tests.py
 
       - name: Executar fluxo completo e validações
         continue-on-error: true
