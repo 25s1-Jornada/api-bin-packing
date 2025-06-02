@@ -5,7 +5,6 @@ WORKDIR /app
 # Instala dependências do sistema (se necessário)
 # Docker CLI para comunicação com o host (opcional)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    docker.io \
     && rm -rf /var/lib/apt/lists/*
 
 #WORKDIR /app
