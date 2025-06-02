@@ -1,0 +1,43 @@
+name: CI - API Bin Packing
+
+on:
+  push:
+    branches: [ "CI" ]
+
+jobs:
+  test-and-validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build Docker Image
+        run: docker build -f packingsolver.Dockerfile -t binpacking .
+
+      - name: Run Container and Execute Tests
+        run: |
+          docker run --rm -v ${{ github.workspace }}/data:/app/data binpacking python src/tests.py
+
+      - name: Executar fluxo completo e validações
+        run: |
+          docker run --rm -p 8000:8000 -v ${{ github.workspace }}/data:/app/data binpacking bash -c "
+            uvicorn src.main:app --host 0.0.0.0 --port 8000 &
+            sleep 2 &&
+            python test/teste_input.py
+          "
+          
+      - name: Validação Input vs Output
+        run: |
+          docker run --rm -v ${{ github.workspace }}/data:/app/data binpacking python test/validacao_camiseta.py
+
+      - name: Validação Performance
+        run: |
+          docker run --rm -v ${{ github.workspace }}/data:/app/data binpacking python test/validacao_tempo.py
+
+      - name: Validação do Espaço da Mesa
+        run: |
+          docker run --rm -v ${{ github.workspace }}/data:/app/data binpacking python test/validacao_espaco.py
