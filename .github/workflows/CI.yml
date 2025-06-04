@@ -23,13 +23,25 @@ jobs:
           tags: binpacking:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          load: true  # <- garante que a imagem estará disponível para docker run
+          load: true
 
-      - name: Executar fluxo completo e validações
-        continue-on-error: true
+      - name: Iniciar FastAPI em background
+        id: start_container
         run: |
-          docker run -d --name fastapi-app -p 8000:8000 -v ${{ github.workspace }}/data:/app/data binpacking uvicorn src.main:app --host 0.0.0.0 --port 8000
-          sleep 5
+          docker run -d --name fastapi-app \
+            -p 8000:8000 \
+            -v ${{ github.workspace }}/data:/app/data \
+            binpacking \
+            uvicorn src.main:app --host 0.0.0.0 --port 8000
+
+          sleep 5  # aguarda API subir
+
+      - name: Verificar logs do container (se falhar)
+        if: failure()
+        run: docker logs fastapi-app
+
+      - name: Executar teste da API
+        run: |
           docker exec fastapi-app python3 test/teste_input.py
 
       - name: Validação Camiseta
@@ -44,6 +56,6 @@ jobs:
         run: |
           docker exec fastapi-app python3 test/validacao_espaco.py
 
-      - name: Stop container
+      - name: Encerrar container
         if: always()
         run: docker stop fastapi-app
