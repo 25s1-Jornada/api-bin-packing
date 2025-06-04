@@ -2,7 +2,7 @@ name: CI - API Bin Packing
 
 on:
   push:
-    branches: [ "CI" ]
+    branches: ["CI"]
 
 jobs:
   test-and-validate:
@@ -25,30 +25,25 @@ jobs:
           cache-to: type=gha,mode=max
           load: true  # <- garante que a imagem estará disponível para docker run
 
-      - name: Run Container and Execute Tests
-        run: |
-          docker run --rm -v ${{ github.workspace }}/data:/app/data binpacking python3 src/tests.py
-
       - name: Executar fluxo completo e validações
         continue-on-error: true
         run: |
-          docker run --rm -p 8000:8000 -v ${{ github.workspace }}/data:/app/data binpacking bash -c "
-            uvicorn src.main:app --host 0.0.0.0 --port 8000 &
-            sleep 2 &&
-            python3 test/teste_input.py
-          "
+          docker run -d --name fastapi-app -p 8000:8000 -v ${{ github.workspace }}/data:/app/data binpacking uvicorn src.main:app --host 0.0.0.0 --port 8000
+          sleep 5
+          docker exec fastapi-app python3 test/teste_input.py
 
-      - name: Validação Input vs Output
-        continue-on-error: true
+      - name: Validação Camiseta
         run: |
-          docker run --rm -v ${{ github.workspace }}/data:/app/data binpacking python3 test/validacao_camiseta.py
+          docker exec fastapi-app python3 test/validacao_camiseta.py
 
-      - name: Validação Performance
-        continue-on-error: true
+      - name: Validação Tempo
         run: |
-          docker run --rm -v ${{ github.workspace }}/data:/app/data binpacking python3 test/validacao_tempo.py
+          docker exec fastapi-app python3 test/validacao_tempo.py
 
-      - name: Validação do Espaço da Mesa
-        continue-on-error: true
+      - name: Validação Espaço da Mesa
         run: |
-          docker run --rm -v ${{ github.workspace }}/data:/app/data binpacking python3 test/validacao_espaco.py
+          docker exec fastapi-app python3 test/validacao_espaco.py
+
+      - name: Stop container
+        if: always()
+        run: docker stop fastapi-app
