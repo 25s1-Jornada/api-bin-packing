@@ -16,7 +16,7 @@ exec_result = container.exec_run(
 
 end = time.time()
 elapsed = end - start
-print(f"⏱️ Tempo de execução: {elapsed:.2f} segundos")
+print(f"Tempo de execução: {elapsed:.2f} segundos")
 
 assert elapsed <= 10.0, "Tempo de execução excedeu o limite de 10s"
 print("Tempo de execução dentro do esperado.")

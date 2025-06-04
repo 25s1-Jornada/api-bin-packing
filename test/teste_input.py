@@ -6,17 +6,17 @@ base_url = "http://localhost:8000"
 data_dir = "/app/data"  # se estiver rodando dentro do container
 
 # 1. Cria a mesa
-res = requests.post(f"{base_url}/table/new", json={"width": 800, "height": 600})
+res = requests.post(f"{base_url}/table/new", json={"width": 2000, "height": 2000})
 assert res.status_code == 200
 table_id = int(res.json().replace('"', '').split(":")[1][:-1])
 print(f"Mesa criada com ID {table_id}")
 
 # 2. Envia camisetas
 payload = {
-    "type": "basic",
-    "p": 2,
-    "m": 2,
-    "g": 1
+    "p": 45,
+    "m": 60,
+    "g": 90,
+    "type": "T-SHIRT"
 }
 res = requests.post(f"{base_url}/table/{table_id}/addMany", json=payload)
 assert res.status_code == 200
