@@ -47,3 +47,5 @@ Run the container
     docker-compose up --build
 
 ```
+
+Teste Funcional de Registros: https://docs.google.com/spreadsheets/d/1xmPjmkWVIUrXNVcmguXJSGu3JWRGIdxMXj_lB2CB_u4/edit?gid=0#gid=0
