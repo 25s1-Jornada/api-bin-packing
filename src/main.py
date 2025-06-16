@@ -105,12 +105,18 @@ async def add_many(table_id: int, add_shirt: addManyShirt):
     shirtRectsP = shirtRectsService.get_by_shirtId(shirtP.id)
     shirtRectsM = shirtRectsService.get_by_shirtId(shirtM.id)
     shirtRectsG = shirtRectsService.get_by_shirtId(shirtG.id)
+    print('-----------------------')
+    print(shirtRectsP, '|', shirtRectsM, '|', shirtRectsG)
+    print('-----------------------')
 
-    shirtList = [
-        (add_shirt.p, shirtRectsP),
-        (add_shirt.m, shirtRectsM),
-        (add_shirt.g, shirtRectsG),
-    ]
+    shirtList = []
+    if(add_shirt.p != 0): shirtList.append((add_shirt.p, shirtRectsP)),
+    if(add_shirt.m != 0): shirtList.append((add_shirt.m, shirtRectsM)),
+    if(add_shirt.g != 0): shirtList.append((add_shirt.g, shirtRectsG)),
+    
+    print('-----------------------')
+    print(shirtList)
+    print('-----------------------')
     
     if table is not None and shirtP is not None and shirtM is not None and shirtG is not None:
         return json.dumps(execute_action(table=table, vertices_list=shirtList, clientId=table_id))
@@ -196,3 +202,4 @@ async def remove_shirt(table_id: int, shirt_id: int):
 if __name__ == '__main__':
     populate_data()
     uvicorn.run(app, host='0.0.0.0', port=8000)
+    #uvicorn.run(app, host='localhost', port=8000)

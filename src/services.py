@@ -154,7 +154,7 @@ class ShirtRectsService:
     #         unique_id = self.generate_uuid(rect.id, rect.shirt_id, random_id)
     #         result.append((rect.width, rect.height, unique_id))
 
-        return result
+        #return result
 
 
     def generate_uuid(self, rect_id: int, shirt_id: int, random_id: int = 0) -> str:

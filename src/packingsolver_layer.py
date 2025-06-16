@@ -45,7 +45,7 @@ def run_packingsolver(input_path: str, output_path: str):
         # Executa o comando dentro do container rodando
         # To rodando detach pq por algum motivo o packingsolver não finaliza a execução
         exec_result = container.exec_run(
-            cmd=f"packingsolver_irregular -i {input_path} -c {output_path} --time-limit 120 -e",
+            cmd=f"packingsolver_irregular -i {input_path} -c {output_path} --time-limit 60 -e",
             #detach=True
         )
         
@@ -73,9 +73,15 @@ def generate_json(vertices_list: List[Tuple],
 #                  copies_per_item: Optional[int] = 1,
                   item_copies: Optional[int] = 3) -> Dict:
 
-    non_sleeve_items = []
+    non_items = []
+    front_items = []
+    back_items = []
+    sholder_items = []
     sleeve_items = []
 
+    print('---------------------------------')
+    print("Generating JSON with vertices: \n", vertices_list)
+    print('---------------------------------')
     
     shirt_id = uuid.uuid4()
         ## aqui eu preciso achar um jeito de melhorar esses tipos para verificar as quantidades
@@ -97,18 +103,25 @@ def generate_json(vertices_list: List[Tuple],
                     }
                 ]
             }
-            if vert.type.lower() == "manga":
+            if vert.type.lower() == "manga" or vert.type.lower() == "manga2":
                 sleeve_items.append(item)
+            if vert.type.lower() == "frente":
+                front_items.append(item)
+            elif vert.type.lower() == "costa":
+                back_items.append(item)
+            elif vert.type.lower() == "ombro":
+                sholder_items.append(item)
             else:
-                non_sleeve_items.append(item)
+                non_items.append(item)
                 
-    item_types = non_sleeve_items + sleeve_items
+    item_types = front_items + back_items + sholder_items + sleeve_items #+ non_items
 
     result = {
-        "objective": "open-dimension-x",
+        #"objective": "open-dimension-x",
+        "objective": "knapsack",
         "parameters": {
-            "item_bin_minimum_spacing": 0.2,
-            "item_item_minimum_spacing": 0.4
+            "item_bin_minimum_spacing": 0,#0.2,
+            "item_item_minimum_spacing": 0# 0.4
         },
         "bin_types": [
             {
@@ -304,7 +317,7 @@ def plot_solution(
     return fig
 
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
 #     notify = inotify.adapters.Inotify()
 #     notify.add_watch("/data/")
     
@@ -319,4 +332,4 @@ def plot_solution(
 
 #         if filename == "output.json" and type_names[0] == 'IN_CLOSE_WRITE':
 #             print("ploting solution")
-#             plot_solution("/data/output.json", save_as="/data/output.png")
+    plot_solution("/data/output.json", save_as="/data/output.png")

@@ -54,6 +54,9 @@ class ShirtPoligon(Base):
     shirt_id: Mapped[str] = mapped_column(ForeignKey("shirt.id"))
 
     shirt: Mapped["Shirt"] = relationship("Shirt", back_populates="shirt_poligon")
+    
+    def __name__(self):
+        return f"{self.shirt.type} {self.shirt.size} {self.type} {self.id}"
 
 class PackerModel(Base):
     __tablename__ = 'packers'
