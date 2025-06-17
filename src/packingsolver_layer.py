@@ -45,9 +45,14 @@ def run_packingsolver(input_path: str, output_path: str):
         # Executa o comando dentro do container rodando
         # To rodando detach pq por algum motivo o packingsolver não finaliza a execução
         exec_result = container.exec_run(
-            cmd=f"packingsolver_irregular -i {input_path} -c {output_path} --time-limit 60 -e",
+            cmd=f"packingsolver_irregular -i {input_path} -c {output_path} --time-limit 60 -e --not-anytime-sequential-value-correction-number-of-iterations 128", # --time-limit 60
             #detach=True
         )
+        
+        # exec_result = container.exec_run(
+        #     cmd=f"packingsolver_irregular -i {input_path} -c {output_path} -e --use-dichotomic-search true --optimization-mode NotAnytime --use-column-generation true --not-anytime-sequential-value-correction-number-of-iterations 128", # --time-limit 60
+        #     #detach=True
+        # )
         
         print(exec_result.output.decode('utf-8'))
         
@@ -332,4 +337,5 @@ if __name__ == "__main__":
 
 #         if filename == "output.json" and type_names[0] == 'IN_CLOSE_WRITE':
 #             print("ploting solution")
+    run_packingsolver("/data/input.json", "/data/output.json")
     plot_solution("/data/output.json", save_as="/data/output.png")
