@@ -10,7 +10,6 @@ import plotly.express as px
 import plotly.subplots as sp
 from typing import Dict, List, Union, Optional
 import os
-import inotify.adapters
 
 from models import GartmentTable, ShirtPoligon
 
