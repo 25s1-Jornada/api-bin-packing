@@ -44,7 +44,7 @@ def run_packingsolver(input_path: str, output_path: str):
         # Executa o comando dentro do container rodando
         # To rodando detach pq por algum motivo o packingsolver não finaliza a execução
         exec_result = container.exec_run(
-            cmd=f"packingsolver_irregular -i {input_path} -c {output_path} --time-limit 120 -e",
+            cmd=f"packingsolver_irregular -i {input_path} -c {output_path} --time-limit 30 -e",
             #detach=True
         )
         
